@@ -90,16 +90,23 @@ Change it to:
 "tools": {
   "profile": "coding",
   "deny": ["exec"],
-  "allow": ["read", "write", "shell"]
+  "alsoAllow": ["shell"]
 }
 ```
 
 *(The `tools.exec.pathPrepend` setting only applies to the built-in exec.
 Pass `pathPrepend` in the plugin config block instead.)*
 
+**Why `alsoAllow` and not `allow`?**
+openclaw applies tool policies in a pipeline: the profile policy runs first and
+filters to its own known set of core tools.  A plugin tool like `shell` is
+unknown to the profile, so it gets dropped before the global `tools.allow` list
+is ever consulted.  `alsoAllow` is merged into the profile's allow list *before*
+that filter runs, which is why it is the correct key here.
+
 Because the plugin registers the tool with `optional: true`, it only appears
-when it is listed in `tools.allow` (or resolved via the plugin ID
-`bash-env-exec` in an allow/alsoAllow list).
+when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
+`bash-env-exec` in an alsoAllow list).
 
 ### Minimal working openclaw.json excerpt
 
@@ -111,7 +118,7 @@ when it is listed in `tools.allow` (or resolved via the plugin ID
   "tools": {
     "profile": "coding",
     "deny": ["exec"],
-    "allow": ["read", "write", "shell"]
+    "alsoAllow": ["shell"]
   }
 }
 ```
