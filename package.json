@@ -6,6 +6,9 @@
   "main": "index.ts",
   "keywords": ["openclaw", "plugin"],
   "license": "MIT",
+  "openclaw": {
+    "extensions": ["./dist/index.js"]
+  },
   "peerDependencies": {
     "openclaw": "*"
   },
