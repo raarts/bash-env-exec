@@ -1,0 +1,35 @@
+{
+  "id": "bash-env-exec",
+  "name": "Bash Env Exec",
+  "description": "Gateway exec replacement that injects BASH_ENV before every shell command. Replacement for the built-in exec; see README.md.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "toolName": {
+        "type": "string",
+        "default": "shell",
+        "description": "Name to register the tool under. Must NOT be 'exec' — see README.md. Default: 'shell'."
+      },
+      "bashEnvFile": {
+        "type": "string",
+        "description": "Value written to BASH_ENV for each command. Relative paths are resolved against the command's working directory at runtime by bash itself. Default: .bash_env"
+      },
+      "pathPrepend": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Directories to prepend to PATH, in order. Mirrors tools.exec.pathPrepend."
+      },
+      "defaultTimeoutSec": {
+        "type": "number",
+        "minimum": 1,
+        "description": "Default command timeout in seconds. Default: 1800."
+      },
+      "defaultYieldMs": {
+        "type": "number",
+        "minimum": 10,
+        "description": "Default milliseconds to wait before yielding a still-running command to the background. Default: 10000."
+      }
+    }
+  }
+}

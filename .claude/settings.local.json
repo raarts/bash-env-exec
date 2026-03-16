@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/artsr/.npm-global/lib/node_modules/openclaw/**)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(python3 -m json.tool)"
+    ]
+  }
+}
