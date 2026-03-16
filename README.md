@@ -65,23 +65,10 @@ If you prefer to keep the plugin somewhere else, add it explicitly instead:
 ### 2. Configure the plugin
 
 The tool name defaults to `shell` and `.bash_env` is sourced by default,
-so minimal configuration is needed. Add a config block to `~/.openclaw/openclaw.json`
-only if you want to override the defaults:
+so no configuration is needed for a basic setup.
 
-```json
-{
-  "plugins": {
-    "enabled": true,
-    "config": {
-      "bash-env-exec": {
-        "toolName": "shell",
-        "bashEnvFile": ".bash_env",
-        "pathPrepend": ["/usr/local/bin"]
-      }
-    }
-  }
-}
-```
+> **Note:** Plugin-specific config (overriding `toolName`, `bashEnvFile`, etc.)
+> is not yet supported via `openclaw.json`. The defaults work for most setups.
 
 ### 3. Update your tools policy
 
@@ -119,12 +106,7 @@ when it is listed in `tools.allow` (or resolved via the plugin ID
 ```json
 {
   "plugins": {
-    "enabled": true,
-    "config": {
-      "bash-env-exec": {
-        "pathPrepend": ["/usr/local/bin"]
-      }
-    }
+    "enabled": true
   },
   "tools": {
     "profile": "coding",
