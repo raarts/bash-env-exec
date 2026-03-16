@@ -1,0 +1,15 @@
+{
+  "name": "bash-env-exec",
+  "version": "1.0.0",
+  "description": "OpenClaw plugin: gateway exec replacement that injects BASH_ENV before every shell command",
+  "type": "module",
+  "main": "index.ts",
+  "keywords": ["openclaw", "plugin"],
+  "license": "MIT",
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "optionalDependencies": {
+    "@lydell/node-pty": "*"
+  }
+}
