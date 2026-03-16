@@ -18,45 +18,31 @@
 
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { Type } from "@sinclair/typebox";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 
 // ---------------------------------------------------------------------------
 // Schema (mirrors bash-tools.exec-runtime.ts execSchema)
 // ---------------------------------------------------------------------------
 
-const execSchema = Type.Object({
-  command: Type.String({ description: "Shell command to execute" }),
-  workdir: Type.Optional(
-    Type.String({ description: "Working directory (defaults to cwd)" }),
-  ),
-  env: Type.Optional(Type.Record(Type.String(), Type.String())),
-  yieldMs: Type.Optional(
-    Type.Number({
-      description: "Milliseconds to wait before backgrounding (default 10000)",
-    }),
-  ),
-  background: Type.Optional(
-    Type.Boolean({ description: "Run in background immediately" }),
-  ),
-  timeout: Type.Optional(
-    Type.Number({
-      description: "Timeout in seconds (optional, kills process on expiry)",
-    }),
-  ),
-  pty: Type.Optional(
-    Type.Boolean({
-      description:
-        "Run in a pseudo-terminal (PTY) when available. Falls back to pipe on failure.",
-    }),
-  ),
-  // Accepted for interface compatibility; ignored by this plugin.
-  elevated: Type.Optional(Type.Boolean()),
-  host: Type.Optional(Type.String()),
-  security: Type.Optional(Type.String()),
-  ask: Type.Optional(Type.String()),
-  node: Type.Optional(Type.String()),
-});
+const execSchema = {
+  type: "object",
+  properties: {
+    command: { type: "string", description: "Shell command to execute" },
+    workdir: { type: "string", description: "Working directory (defaults to cwd)" },
+    env: { type: "object", additionalProperties: { type: "string" } },
+    yieldMs: { type: "number", description: "Milliseconds to wait before backgrounding (default 10000)" },
+    background: { type: "boolean", description: "Run in background immediately" },
+    timeout: { type: "number", description: "Timeout in seconds (optional, kills process on expiry)" },
+    pty: { type: "boolean", description: "Run in a pseudo-terminal (PTY) when available. Falls back to pipe on failure." },
+    // Accepted for interface compatibility; ignored by this plugin.
+    elevated: { type: "boolean" },
+    host: { type: "string" },
+    security: { type: "string" },
+    ask: { type: "string" },
+    node: { type: "string" },
+  },
+  required: ["command"],
+} as const;
 
 // ---------------------------------------------------------------------------
 // Helpers
