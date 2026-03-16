@@ -131,7 +131,7 @@ const plugin = {
 
     console.error(`[bash-env-exec] registering tool "${toolName}" (optional=true)`);
     api.registerTool(
-      (ctx) => ({
+      {
         name: toolName,
         label: toolName,
         description: [
@@ -144,6 +144,7 @@ const plugin = {
 
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
           console.error(`[bash-env-exec] execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
+          const agentId = undefined;
           const params = args as {
             command: string;
             workdir?: string;
@@ -187,7 +188,7 @@ const plugin = {
             : path.resolve(process.cwd(), rawWorkdir);
 
           // Build env with BASH_ENV and agent identity injected.
-          const env = prepareEnv({ bashEnvFile, pathPrepend, agentId: ctx.agentId, userEnv: params.env });
+          const env = prepareEnv({ bashEnvFile, pathPrepend, agentId, userEnv: params.env });
 
           // Shell binary.
           const shell = resolveShell();
@@ -425,7 +426,7 @@ const plugin = {
             }
           });
         },
-      }),
+      },
       { optional: true },
     );
   },
