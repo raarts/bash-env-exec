@@ -131,7 +131,7 @@ const plugin = {
 
     console.error(`[bash-env-exec] registering tool "${toolName}" (optional=true)`);
     api.registerTool(
-      {
+      (ctx: { agentId?: string }) => ({
         name: toolName,
         label: toolName,
         description: [
@@ -144,7 +144,7 @@ const plugin = {
 
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
           console.error(`[bash-env-exec] execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
-          const agentId = undefined;
+          const agentId = ctx.agentId;
           const params = args as {
             command: string;
             workdir?: string;
@@ -426,7 +426,7 @@ const plugin = {
             }
           });
         },
-      },
+      }),
       { optional: true },
     );
   },
