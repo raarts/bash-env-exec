@@ -116,7 +116,7 @@ const plugin = {
   name: "Bash Env Exec",
 
   register(api: OpenClawPluginApi) {
-    console.error(`[bash-env-exec] register() called`);
+    const log = api.logger;
     const cfg = (api.pluginConfig ?? {}) as PluginConfig;
     const toolName = cfg.toolName ?? "shell";
     const bashEnvFile = cfg.bashEnvFile ?? ".bash_env";
@@ -130,7 +130,7 @@ const plugin = {
         ? cfg.defaultYieldMs
         : 10_000;
 
-    console.error(`[bash-env-exec] registering tool "${toolName}" (optional=true)`);
+    log.debug?.(`registering tool "${toolName}" (optional=true)`);
     api.registerTool(
       (ctx: { agentId?: string }) => ({
         name: toolName,
@@ -144,7 +144,7 @@ const plugin = {
         parameters: execSchema,
 
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
-          console.error(`[bash-env-exec] execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
+          log.debug?.(`execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
           const agentId = ctx.agentId;
           const params = args as {
             command: string;
@@ -193,7 +193,7 @@ const plugin = {
 
           // Shell binary.
           const shell = resolveShell();
-          console.error(`[bash-env-exec] shell=${shell}, workdir=${workdir}, command=${params.command}`);
+          log.debug?.(`shell=${shell}, workdir=${workdir}, command=${params.command}`);
 
           // Timeout.
           const timeoutMs =
@@ -362,7 +362,7 @@ const plugin = {
               }
             } else {
               // Pipe path
-              console.error(`[bash-env-exec] spawning pipe: ${shell} -c "${params.command}"`);
+              log.debug?.(`spawning pipe: ${shell} -c "${params.command}"`);
               const proc = spawn(shell, ["-c", params.command], {
                 cwd: workdir,
                 env,
@@ -380,12 +380,12 @@ const plugin = {
               });
 
               proc.on("close", (code, sig) => {
-                console.error(`[bash-env-exec] proc closed, code=${code}, sig=${sig}, output=${JSON.stringify(output.slice(0, 200))}`);
+                log.debug?.(`proc closed, code=${code}, sig=${sig}, output=${JSON.stringify(output.slice(0, 200))}`);
                 finish(code, sig);
               });
 
               proc.on("error", (err) => {
-                console.error(`[bash-env-exec] proc error: ${err.message}`);
+                log.error(`proc error: ${err.message}`);
                 if (!settled && !yielded) {
                   settled = true;
                   if (timeoutHandle) clearTimeout(timeoutHandle);
