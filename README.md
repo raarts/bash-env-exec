@@ -67,15 +67,19 @@ If you prefer to keep the plugin somewhere else, add it explicitly instead:
 The tool name defaults to `shell` and `.bash_env` is sourced by default,
 so no configuration is needed for a basic setup.
 
-Plugin-specific config can be set via the `plugins` section in `openclaw.json`:
+Plugin-specific config can be set via `plugins.entries` in `openclaw.json`:
 
 ```json
 {
   "plugins": {
     "enabled": true,
-    "bash-env-exec": {
-      "toolName": "shell",
-      "bashEnvFile": "/home/you/.bash_env"
+    "entries": {
+      "bash-env-exec": {
+        "config": {
+          "toolName": "shell",
+          "bashEnvFile": "/home/you/.bash_env"
+        }
+      }
     }
   }
 }
