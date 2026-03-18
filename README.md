@@ -67,8 +67,19 @@ If you prefer to keep the plugin somewhere else, add it explicitly instead:
 The tool name defaults to `shell` and `.bash_env` is sourced by default,
 so no configuration is needed for a basic setup.
 
-> **Note:** Plugin-specific config (overriding `toolName`, `bashEnvFile`, etc.)
-> is not yet supported via `openclaw.json`. The defaults work for most setups.
+Plugin-specific config can be set via the `plugins` section in `openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "enabled": true,
+    "bash-env-exec": {
+      "toolName": "shell",
+      "bashEnvFile": "/home/you/.bash_env"
+    }
+  }
+}
+```
 
 ### 3. Update your tools policy
 
@@ -144,7 +155,7 @@ In addition to `BASH_ENV`, every command receives:
 | Variable | Value |
 |----------|-------|
 | `BASH_ENV` | The configured `bashEnvFile` value (default `.bash_env`) |
-| `OPENCLAW_SHELL` | `"exec"` (matches the built-in exec marker) |
+| `OPENCLAW_SHELL` | The configured `toolName` (default `"shell"`) |
 | `OPENCLAW_AGENT` | The openclaw agent ID (e.g. `main`), when available |
 
 `OPENCLAW_AGENT` is useful in scripts or `.bash_env` when you need to

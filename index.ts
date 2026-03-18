@@ -60,6 +60,7 @@ function resolveShell(): string {
 function prepareEnv(params: {
   bashEnvFile: string;
   pathPrepend: string[];
+  shellName: string;
   agentId?: string;
   userEnv?: Record<string, string>;
 }): Record<string, string> {
@@ -84,7 +85,7 @@ function prepareEnv(params: {
 
   // BASH_ENV and agent identity are set last so they cannot be overridden by the caller.
   base["BASH_ENV"] = params.bashEnvFile;
-  base["OPENCLAW_SHELL"] = "exec";
+  base["OPENCLAW_SHELL"] = params.shellName;
   if (params.agentId) {
     base["OPENCLAW_AGENT"] = params.agentId;
   }
@@ -188,7 +189,7 @@ const plugin = {
             : path.resolve(process.cwd(), rawWorkdir);
 
           // Build env with BASH_ENV and agent identity injected.
-          const env = prepareEnv({ bashEnvFile, pathPrepend, agentId, userEnv: params.env });
+          const env = prepareEnv({ bashEnvFile, pathPrepend, shellName: toolName, agentId, userEnv: params.env });
 
           // Shell binary.
           const shell = resolveShell();
