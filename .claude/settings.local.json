@@ -7,7 +7,12 @@
       "Bash(grep:*)",
       "Bash(python3 -m json.tool)",
       "WebSearch",
-      "WebFetch(domain:docs.openclaw.ai)"
+      "WebFetch(domain:docs.openclaw.ai)",
+      "Bash(find /Users/artsr/local/openclaw/src -type f \\\\\\(-name *plugin* -o -name *register* \\\\\\))",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

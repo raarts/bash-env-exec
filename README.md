@@ -77,7 +77,7 @@ Plugin-specific config can be set via `plugins.entries` in `openclaw.json`:
       "bash-env-exec": {
         "config": {
           "toolName": "shell",
-          "bashEnvFile": "/home/you/.bash_env"
+          "bashEnvFile": ".bash_env"
         }
       }
     }

@@ -144,7 +144,7 @@ const plugin = {
         parameters: execSchema,
 
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
-          log.debug?.(`execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
+          log.info?.(`execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
           const agentId = ctx.agentId;
           const params = args as {
             command: string;
