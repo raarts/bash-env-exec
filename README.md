@@ -4,6 +4,9 @@ An openclaw plugin that replaces the built-in `exec` tool with one that sets
 `BASH_ENV` before every shell command, causing bash to source the named file
 in non-interactive/non-login invocations.
 
+This allows you to set agent-specific environment variables, like tokens, config paths or whatever.
+It also supplies OPENCLAW_AGENT which holds the agent name. 
+
 ## What it does differently
 
 The built-in exec strips `BASH_ENV` from the environment for security reasons.
@@ -77,7 +80,8 @@ Plugin-specific config can be set via `plugins.entries` in `openclaw.json`:
       "bash-env-exec": {
         "config": {
           "toolName": "shell",
-          "bashEnvFile": ".bash_env"
+          "bashEnvFile": ".bash_env",
+          "pathPrepend": [ "/usr/local/bin" ]
         }
       }
     }
@@ -89,21 +93,10 @@ Plugin-specific config can be set via `plugins.entries` in `openclaw.json`:
 
 Block the built-in `exec` and allow this plugin's tool name instead.
 
-Your current `tools` section probably looks like:
+Update or create a tools section like this:
 
 ```json
 "tools": {
-  "exec": { "pathPrepend": ["/usr/local/bin"] },
-  "profile": "coding",
-  "allow": ["read", "write", "exec"]
-}
-```
-
-Change it to:
-
-```json
-"tools": {
-  "profile": "coding",
   "deny": ["exec"],
   "alsoAllow": ["shell"]
 }
@@ -123,21 +116,6 @@ Because the plugin registers the tool with `optional: true`, it only appears
 when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
 `bash-env-exec` in an alsoAllow list).
 
-### Minimal working openclaw.json excerpt
-
-```json
-{
-  "plugins": {
-    "enabled": true
-  },
-  "tools": {
-    "profile": "coding",
-    "deny": ["exec"],
-    "alsoAllow": ["shell"]
-  }
-}
-```
-
 ---
 
 ## Config reference
@@ -154,7 +132,7 @@ when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
 
 ## Environment variables injected by this plugin
 
-In addition to `BASH_ENV`, every command receives:
+This plugin injects the following environment variables:
 
 | Variable | Value |
 |----------|-------|
