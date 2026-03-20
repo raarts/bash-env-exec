@@ -116,6 +116,11 @@ Because the plugin registers the tool with `optional: true`, it only appears
 when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
 `bash-env-exec` in an alsoAllow list).
 
+### 4. Optional: become/unbecome an agent from the command line
+
+Include the contents of `bashrc` in your `.bashrc` file. This will give you 
+two commands: `become <agent>` and `unbecome`, and the agent name will be visible 
+in the bash prompt.
 ---
 
 ## Config reference
