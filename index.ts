@@ -62,6 +62,7 @@ function prepareEnv(params: {
   pathPrepend: string[];
   shellName: string;
   agentId?: string;
+  workspaceDir?: string;
   userEnv?: Record<string, string>;
 }): Record<string, string> {
   const base: Record<string, string> = {};
@@ -88,6 +89,9 @@ function prepareEnv(params: {
   base["OPENCLAW_SHELL"] = params.shellName;
   if (params.agentId) {
     base["OPENCLAW_AGENT"] = params.agentId;
+  }
+  if (params.workspaceDir) {
+    base["OPENCLAW_WORKSPACE"] = params.workspaceDir;
   }
 
   return base;
@@ -132,7 +136,7 @@ const plugin = {
 
     log.debug?.(`registering tool "${toolName}" (optional=true)`);
     api.registerTool(
-      (ctx: { agentId?: string }) => ({
+      (ctx: { agentId?: string; workspaceDir?: string }) => ({
         name: toolName,
         label: toolName,
         description: [
@@ -146,6 +150,7 @@ const plugin = {
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
           log.info?.(`execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
           const agentId = ctx.agentId;
+          const workspaceDir = ctx.workspaceDir;
           const params = args as {
             command: string;
             workdir?: string;
@@ -189,7 +194,7 @@ const plugin = {
             : path.resolve(process.cwd(), rawWorkdir);
 
           // Build env with BASH_ENV and agent identity injected.
-          const env = prepareEnv({ bashEnvFile, pathPrepend, shellName: toolName, agentId, userEnv: params.env });
+          const env = prepareEnv({ bashEnvFile, pathPrepend, shellName: toolName, agentId, workspaceDir, userEnv: params.env });
 
           // Shell binary.
           const shell = resolveShell();

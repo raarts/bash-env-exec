@@ -144,9 +144,11 @@ This plugin injects the following environment variables:
 | `BASH_ENV` | The configured `bashEnvFile` value (default `.bash_env`) |
 | `OPENCLAW_SHELL` | The configured `toolName` (default `"shell"`) |
 | `OPENCLAW_AGENT` | The openclaw agent ID (e.g. `main`), when available |
+| `OPENCLAW_WORKSPACE` | The agent's workspace directory, when available |
 
-`OPENCLAW_AGENT` is useful in scripts or `.bash_env` when you need to
-behave differently depending on which agent is running the command.
+`OPENCLAW_AGENT` and `OPENCLAW_WORKSPACE` are useful in scripts or `.bash_env` when you need to
+behave differently depending on which agent is running the command, or need to reference
+the agent's workspace path.
 
 ---
 

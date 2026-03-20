@@ -13,7 +13,7 @@ become() {
       return 1
     fi
 
-    workspace=$(jq -r --arg agent "$AGENT" '
+    OPENCLAW_WORKSPACE=$(jq -r --arg agent "$AGENT" '
       (.agents.list? // []
         | .[]
         | select(.id? == $agent)
@@ -23,32 +23,34 @@ become() {
       // "not found"
     ' "$CONFIG")
 
-    if [[ -z "$workspace" ]]; then
-        echo "❌ Unknown agent: '$agent'"
+    if [[ -z "$OPENCLAW_WORKSPACE" ]]; then
+        echo "❌ Unknown agent: '$AGENT'"
         return 1
     fi
 
-    if [[ ! -d "$workspace" ]]; then
-        echo "❌ Directory not found: $workspace"
+    if [[ ! -d "$OPENCLAW_WORKSPACE" ]]; then
+        echo "❌ Directory not found: $OPENCLAW_WORKSPACE"
         return 1
     fi
 
-    if [[ -f "$workspace/.bash_env" ]]; then
-        pushd $workspace &> /dev/null
-        source $workspace/.bash_env
+    if [[ -f "$OPENCLAW_WORKSPACE/.bash_env" ]]; then
+        pushd $OPENCLAW_WORKSPACE &> /dev/null
+        source $OPENCLAW_WORKSPACE/.bash_env
         popd       &> /dev/null
     else
-        echo "⚠️  No .bash_env found in $workspace"
+        echo "⚠️  No .bash_env found in $OPENCLAW_WORKSPACE"
     fi
 
     export OPENCLAW_AGENT="$AGENT"
     export OPENCLAW_SHELL="shell"
+    export OPENCLAW_WORKSPACE
 }
 
 unbecome() {
     if [[ -n "${OPENCLAW_AGENT:-}" ]]; then
         unset OPENCLAW_AGENT
         unset OPENCLAW_SHELL
+        unset OPENCLAW_WORKSPACE
         update_prompt
     fi
 }
