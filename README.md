@@ -44,25 +44,10 @@ something else in your setup.
 ### 1. Install the plugin
 
 openclaw auto-discovers plugins placed under `~/.openclaw/extensions/`.
-Copy or symlink this directory there:
+Clone this repo and:
 
 ```sh
-cp -r /path/to/bash-env-exec ~/.openclaw/extensions/bash-env-exec
-# or
-ln -s /path/to/bash-env-exec ~/.openclaw/extensions/bash-env-exec
-```
-
-No changes to `plugins.list` are needed when using the extensions directory.
-
-If you prefer to keep the plugin somewhere else, add it explicitly instead:
-
-```json
-{
-  "plugins": {
-    "enabled": true,
-    "list": ["/path/to/bash-env-exec"]
-  }
-}
+openclaw plugins install ./bash-env-exec
 ```
 
 ### 2. Configure the plugin
@@ -102,9 +87,6 @@ Update or create a tools section like this:
 }
 ```
 
-*(The `tools.exec.pathPrepend` setting only applies to the built-in exec.
-Pass `pathPrepend` in the plugin config block instead.)*
-
 **Why `alsoAllow` and not `allow`?**
 openclaw applies tool policies in a pipeline: the profile policy runs first and
 filters to its own known set of core tools.  A plugin tool like `shell` is
@@ -120,7 +102,9 @@ when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
 
 Include the contents of `bashrc` in your `.bashrc` file. This will give you 
 two commands: `become <agent>` and `unbecome`, and the agent name will be visible 
-in the bash prompt.
+in the bash prompt. It will also give you an `acd` shell command to go to that agents'
+home (workspace) directory.
+
 ---
 
 ## Config reference
