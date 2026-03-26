@@ -188,10 +188,11 @@ const plugin = {
           }
 
           // Resolve workdir.
-          const rawWorkdir = params.workdir?.trim() || process.cwd();
+          const rawWorkdir = params.workdir?.trim() || workspaceDir || process.cwd();
+          const baseDir = workspaceDir || process.cwd();
           const workdir = path.isAbsolute(rawWorkdir)
             ? rawWorkdir
-            : path.resolve(process.cwd(), rawWorkdir);
+            : path.resolve(baseDir, rawWorkdir);
 
           // Build env with BASH_ENV and agent identity injected.
           const env = prepareEnv({ bashEnvFile, pathPrepend, shellName: toolName, agentId, workspaceDir, userEnv: params.env });
