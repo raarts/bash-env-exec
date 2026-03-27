@@ -148,7 +148,6 @@ const plugin = {
         parameters: execSchema,
 
         execute: async (_toolCallId, args, abortSignal, onUpdate) => {
-          log.info?.(`execute() called, toolCallId=${_toolCallId}, args=${JSON.stringify(args)}`);
           const agentId = ctx.agentId;
           const workspaceDir = ctx.workspaceDir;
           const params = args as {
@@ -165,6 +164,7 @@ const plugin = {
             ask?: string;
             node?: string;
           };
+          log.info?.(`${agentId ?? "unknown"}@shell: ${params.command}`);
 
           if (!params.command) {
             throw new Error("Provide a command to start.");
