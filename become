@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+# Usage: agent-shell <agent-id>
+# Starts an interactive bash shell that replicates the exact environment
+# the given agent sees when executing shell commands via bash-env-exec.
+#
+# Approach:
+#   1. Read the live gateway process environment (the base env the plugin inherits)
+#   2. Source .bash_env via a non-interactive subprocess to capture its exports
+#   3. Overlay agent-specific vars (always win over .bash_env)
+#   4. chdir to the workspace so bash inherits the correct cwd
+#   5. Exec bash --noprofile --rcfile to start an interactive shell with aliases and PS1
+#      (rcfile is used instead of --norc so we can inject aliases; PS1 is set both in
+#       the env and in the rcfile to survive /etc/bash.bashrc resetting it)
+
+import json, os, subprocess, sys
+from pathlib import Path
+
+def die(msg):
+    print(msg, file=sys.stderr)
+    sys.exit(1)
+
+if len(sys.argv) < 2:
+    die("Usage: agent-shell <agent-id>")
+
+agent_id = sys.argv[1]
+home = Path.home()
+
+# Look up workspace from openclaw.json
+config_path = home / ".openclaw" / "openclaw.json"
+with open(config_path) as f:
+    config = json.load(f)
+
+workspace = None
+for a in config.get("agents", {}).get("list", []):
+    if isinstance(a, dict) and a.get("id") == agent_id:
+        workspace = a.get("workspace")
+        break
+
+if workspace is None:
+    die(f"Agent '{agent_id}' not found in openclaw.json")
+if not workspace:
+    die(f"No workspace configured for agent '{agent_id}'")
+
+workspace = Path(workspace)
+bash_env_file = workspace / ".bash_env"
+
+if not bash_env_file.exists():
+    print(f"Warning: {bash_env_file} not found; no agent-specific env overrides", file=sys.stderr)
+
+# Find the gateway PID
+gw_pid = None
+try:
+    result = subprocess.run(
+        ["pgrep", "-f", "openclaw-gateway"],
+        capture_output=True, text=True
+    )
+    pids = result.stdout.strip().splitlines()
+    if pids:
+        gw_pid = pids[0].strip()
+except Exception:
+    pass
+
+print(f"Starting shell as agent '{agent_id}'")
+
+# 1. Base env: gateway process env
+env = {}
+if gw_pid:
+    try:
+        data = open(f"/proc/{gw_pid}/environ", "rb").read()
+        for entry in data.split(b"\x00"):
+            if b"=" in entry:
+                k, _, v = entry.partition(b"=")
+                env[k.decode("utf-8", errors="replace")] = v.decode("utf-8", errors="replace")
+    except OSError:
+        pass
+
+# 2. Strip bash session internals that must not be inherited across exec boundaries
+for var in ("SHELLOPTS", "BASHOPTS", "BASH_ENV", "ENV"):
+    env.pop(var, None)
+
+# Ensure essential interactive-shell vars are present (fallback to current env)
+for var in ("HOME", "TERM", "COLORTERM", "LANG", "USER", "LOGNAME", "PATH"):
+    if var not in env and var in os.environ:
+        env[var] = os.environ[var]
+
+# 3. Apply .bash_env by sourcing it in a non-interactive bash and capturing the result.
+#    This is more reliable than --init-file for interactive shells.
+if bash_env_file.exists():
+    agent_env_vars = {
+        "OPENCLAW_AGENT":     agent_id,
+        "OPENCLAW_SHELL":     "bash",
+        "OPENCLAW_WORKSPACE": str(workspace),
+        "OPENCLAW_HOME":      str(workspace),
+    }
+    source_env = {**env, **agent_env_vars}
+    try:
+        result = subprocess.run(
+            ["bash", "--norc", "--noprofile", "-c",
+             f'source "{bash_env_file}" && env -0'],
+            capture_output=True, env=source_env
+        )
+        if result.returncode == 0:
+            for entry in result.stdout.split(b"\x00"):
+                if b"=" in entry:
+                    k, _, v = entry.partition(b"=")
+                    key = k.decode("utf-8", errors="replace")
+                    env[key] = v.decode("utf-8", errors="replace")
+    except Exception as e:
+        print(f"Warning: could not source {bash_env_file}: {e}", file=sys.stderr)
+
+# 4. Agent-specific overrides — always win, applied after .bash_env
+env["OPENCLAW_AGENT"]     = agent_id
+env["OPENCLAW_SHELL"]     = "bash"
+env["OPENCLAW_WORKSPACE"] = str(workspace)
+env["OPENCLAW_HOME"]      = str(workspace)
+
+# Strip bash session internals again (env -0 may have re-introduced them)
+for var in ("SHELLOPTS", "BASHOPTS", "BASH_ENV", "ENV"):
+    env.pop(var, None)
+
+# PS1: prepend agent name to the user's own current prompt
+user_ps1 = os.environ.get("PS1", r"\u@\h:\w\$ ")
+env["PS1"] = f"({agent_id}) {user_ps1}"
+
+# Aliases can't be set via env; write a fixed-name rcfile per agent (no temp file to clean up).
+alias_file = Path(f"/tmp/agent-shell-{agent_id}.bashrc")
+alias_file.write_text(
+    f'alias acd="cd $OPENCLAW_HOME"\n'
+    f'PS1="({agent_id}) {user_ps1}"\n'
+    f'trap \'rm -f "{alias_file}"\' EXIT\n'
+)
+
+# 5. chdir to workspace before exec — bash inherits the cwd
+os.chdir(str(workspace))
+
+# 6. Exec bash — replaces this Python process.
+#    --noprofile: skip /etc/profile and ~/.bash_profile (not a login shell)
+#    --rcfile:    read our per-agent file instead of ~/.bashrc (sets alias + PS1, cleans up on exit)
+os.execve("/bin/bash", ["bash", "--noprofile", "--rcfile", str(alias_file)], env)

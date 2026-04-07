@@ -98,12 +98,32 @@ Because the plugin registers the tool with `optional: true`, it only appears
 when it is listed in `tools.alsoAllow` (or resolved via the plugin ID
 `bash-env-exec` in an alsoAllow list).
 
-### 4. Optional: become/unbecome an agent from the command line
+### 4. Optional: open an agent shell from the command line
 
-Include the contents of `bashrc` in your `.bashrc` file. This will give you 
-two commands: `become <agent>` and `unbecome`, and the agent name will be visible 
-in the bash prompt. It will also give you an `acd` shell command to go to that agents'
-home (workspace) directory.
+The `become` script starts an interactive bash shell with the exact environment
+that an agent sees when executing commands via this plugin: gateway process env,
+`.bash_env` applied, agent vars set, and cwd pointing to the agent's workspace.
+
+Place it somewhere on your `PATH`:
+
+```sh
+cp become ~/bin/become   # or any directory on your PATH
+chmod +x ~/bin/become
+```
+
+Then use it as:
+
+```sh
+become <agent-id>   # e.g. become kai
+```
+
+Inside the shell you get:
+- Prompt prefixed with the agent name: `(kai) artsr@host:~$`
+- `acd` alias to jump back to the agent's workspace
+- All `.bash_env` exports active
+- `OPENCLAW_AGENT`, `OPENCLAW_WORKSPACE`, `OPENCLAW_HOME` set
+
+Exit with `exit` or Ctrl-D to return to your normal shell.
 
 ---
 
