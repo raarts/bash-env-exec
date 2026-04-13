@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-# Usage: agent-shell <agent-id>
-# Starts an interactive bash shell that replicates the exact environment
-# the given agent sees when executing shell commands via bash-env-exec.
+# Usage: become <agent-id> [command [args...]]
+# Without a command: starts an interactive bash shell that replicates the exact
+# environment the given agent sees when executing shell commands via bash-env-exec.
+# With a command: executes that command (with args) in the agent environment.
 #
 # Approach:
 #   1. Read the live gateway process environment (the base env the plugin inherits)
 #   2. Source .bash_env via a non-interactive subprocess to capture its exports
 #   3. Overlay agent-specific vars (always win over .bash_env)
 #   4. chdir to the workspace so bash inherits the correct cwd
-#   5. Exec bash --noprofile --rcfile to start an interactive shell with aliases and PS1
-#      (rcfile is used instead of --norc so we can inject aliases; PS1 is set both in
-#       the env and in the rcfile to survive /etc/bash.bashrc resetting it)
+#   5a. (interactive) Exec bash --noprofile --rcfile to start an interactive shell
+#       with aliases and PS1 (rcfile survives /etc/bash.bashrc resetting PS1)
+#   5b. (command) Exec the command directly with the agent environment
 
 import json, os, subprocess, sys
 from pathlib import Path
@@ -20,7 +21,7 @@ def die(msg):
     sys.exit(1)
 
 if len(sys.argv) < 2:
-    die("Usage: agent-shell <agent-id>")
+    die("Usage: become <agent-id> [command [args...]]")
 
 agent_id = sys.argv[1]
 home = Path.home()
@@ -60,7 +61,11 @@ try:
 except Exception:
     pass
 
-print(f"Starting shell as agent '{agent_id}'")
+cmd_args = sys.argv[2:]
+interactive = len(cmd_args) == 0
+
+if interactive:
+    print(f"Starting shell as agent '{agent_id}'")
 
 # 1. Base env: gateway process env
 env = {}
@@ -118,22 +123,46 @@ env["OPENCLAW_HOME"]      = str(workspace)
 for var in ("SHELLOPTS", "BASHOPTS", "BASH_ENV", "ENV"):
     env.pop(var, None)
 
-# PS1: prepend agent name to the user's own current prompt
-user_ps1 = os.environ.get("PS1", r"\u@\h:\w\$ ")
-env["PS1"] = f"({agent_id}) {user_ps1}"
-
-# Aliases can't be set via env; write a fixed-name rcfile per agent (no temp file to clean up).
-alias_file = Path(f"/tmp/agent-shell-{agent_id}.bashrc")
-alias_file.write_text(
-    f'alias acd="cd $OPENCLAW_HOME"\n'
-    f'PS1="({agent_id}) {user_ps1}"\n'
-    f'trap \'rm -f "{alias_file}"\' EXIT\n'
-)
-
-# 5. chdir to workspace before exec — bash inherits the cwd
+# 5. chdir to workspace before exec — bash (and any command) inherits the cwd
 os.chdir(str(workspace))
 
-# 6. Exec bash — replaces this Python process.
-#    --noprofile: skip /etc/profile and ~/.bash_profile (not a login shell)
-#    --rcfile:    read our per-agent file instead of ~/.bashrc (sets alias + PS1, cleans up on exit)
-os.execve("/bin/bash", ["bash", "--noprofile", "--rcfile", str(alias_file)], env)
+if interactive:
+    # PS1: prepend agent name to the user's own current prompt
+    user_ps1 = os.environ.get("PS1", r"\u@\h:\w\$ ")
+    env["PS1"] = f"({agent_id}) {user_ps1}"
+
+    # Aliases can't be set via env; write a fixed-name rcfile per agent.
+    alias_file = Path(f"/tmp/agent-shell-{agent_id}.bashrc")
+    alias_file.write_text(
+        f'alias acd="cd $OPENCLAW_HOME"\n'
+        f'PS1="({agent_id}) {user_ps1}"\n'
+        f'trap \'rm -f "{alias_file}"\' EXIT\n'
+    )
+
+    # Exec bash — replaces this Python process.
+    #   --noprofile: skip /etc/profile and ~/.bash_profile
+    #   --rcfile:    read our per-agent file instead of ~/.bashrc
+    os.execve("/bin/bash", ["bash", "--noprofile", "--rcfile", str(alias_file)], env)
+else:
+    # Non-interactive: exec the given command with the agent environment.
+    #
+    # If the caller passed a single string containing shell metacharacters
+    # (&&, ||, ;, |, redirects), treat it as a shell command string so that
+    # `become kai "cd repos/foo && glab ..."` works without an explicit
+    # `bash -c` wrapper.
+    import re
+    _SHELL_META = re.compile(r"&&|\|\||[;|<>]")
+    if len(cmd_args) == 1 and _SHELL_META.search(cmd_args[0]):
+        cmd_args = ["bash", "--norc", "--noprofile", "-c", cmd_args[0]]
+
+    # If executing via bash (with -c or interactively), source .bash_env first
+    # so that shell functions defined there (notify-traffic, gitlab_api, …)
+    # are available inside the command string.
+    if bash_env_file.exists() and cmd_args[0] == "bash" and "-c" in cmd_args:
+        c_idx = cmd_args.index("-c")
+        if c_idx + 1 < len(cmd_args):
+            cmd_args = list(cmd_args)
+            cmd_args[c_idx + 1] = f'source "{bash_env_file}" 2>/dev/null; {cmd_args[c_idx + 1]}'
+
+    # os.execvpe does PATH lookup using the PATH in env.
+    os.execvpe(cmd_args[0], cmd_args, env)
